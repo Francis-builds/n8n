@@ -1,6 +1,6 @@
 build:
   docker:
-    web: docker/images/n8n-base/Dockerfile
+    web: Dockerfile
 
 # Optionally define environment variables here (or set them in Heroku "Config Vars").
 # Typically you'll need N8N_PORT to match Heroku's $PORT, plus any other required vars.
