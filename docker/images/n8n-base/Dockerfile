@@ -19,8 +19,8 @@ RUN apk add --update git openssh graphicsmagick tini tzdata ca-certificates libc
 RUN npm install -g npm@9.9.2 full-icu@1.5.0
 
 # Activate corepack, and install pnpm
-WORKDIR /
-COPY package.json ./
+WORKDIR /tmp
+COPY ../../package.json ./
 RUN corepack enable && corepack prepare --activate
 
 # Cleanup
