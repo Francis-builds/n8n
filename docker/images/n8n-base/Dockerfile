@@ -20,7 +20,7 @@ RUN npm install -g npm@9.9.2 full-icu@1.5.0
 
 # Activate corepack, and install pnpm
 WORKDIR /tmp
-COPY package.json ./
+# COPY package.json ./
 RUN corepack enable && corepack prepare --activate
 
 # Cleanup
