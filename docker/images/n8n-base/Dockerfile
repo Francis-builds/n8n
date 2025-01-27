@@ -21,7 +21,7 @@ RUN npm install -g npm@9.9.2 full-icu@1.5.0
 # Activate corepack, and install pnpm
 WORKDIR /usr/local/src/n8n
 # COPY package.json ./
-RUN corepack enable && corepack prepare --activate
+# RUN corepack enable && corepack prepare --activate
 
 # Cleanup
 RUN	rm -rf /lib/apk/db /var/cache/apk/ /tmp/* /root/.npm /root/.cache/node /opt/yarn*
