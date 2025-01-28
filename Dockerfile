@@ -1,40 +1,71 @@
+# ------------------------------------------------------------------
+# 1) BUILDER STAGE
+# ------------------------------------------------------------------
 ARG NODE_VERSION=20
+FROM node:${NODE_VERSION}-alpine AS builder
 
-# 1. Use a builder step to download various dependencies
-FROM node:${NODE_VERSION}-alpine as builder
+# Install fonts, Git, SSH, GraphicsMagick, etc.
+RUN apk --no-cache add \
+    msttcorefonts-installer \
+    fontconfig \
+    git \
+    openssh \
+    graphicsmagick \
+    tini \
+    tzdata \
+    ca-certificates \
+    libc6-compat \
+    jq \
+ && update-ms-fonts \
+ && fc-cache -f \
+ && rm -rf /var/cache/apk/*
 
-# Install fonts
-RUN	\
-	apk --no-cache add --virtual fonts msttcorefonts-installer fontconfig && \
-	update-ms-fonts && \
-	fc-cache -f && \
-	apk del fonts && \
-	find  /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \;
+# If you actually need a .npmrc (e.g. private packages), uncomment:
+# COPY .npmrc /usr/local/etc/npmrc
 
-# Install git and other OS dependencies
-RUN apk add --update git openssh graphicsmagick tini tzdata ca-certificates libc6-compat jq
-
-# Update npm and install full-uci
-COPY .npmrc /usr/local/etc/npmrc
+# Update npm and install full-icu globally
 RUN npm install -g npm@9.9.2 full-icu@1.5.0
 
-# Activate corepack, and install pnpm
-WORKDIR /tmp
-COPY package.json ./
-RUN corepack enable && corepack prepare --activate
+# (Optional) If you want Yarn/Pnpm:
+# RUN corepack enable && corepack prepare --activate
 
-# Cleanup
-RUN	rm -rf /lib/apk/db /var/cache/apk/ /tmp/* /root/.npm /root/.cache/node /opt/yarn*
+# If you **are building a local/forked n8n**:
+# 1. Copy code and install dependencies
+# WORKDIR /app
+# COPY package.json package-lock.json ./
+# RUN npm install
+# COPY . .
+#
+# 2. Build your custom n8n code
+# RUN npm run build
+#
+# The result: /app now contains your compiled n8n code and node_modules.
 
-# 2. Start with a new clean image and copy over the added files into a single layer
+# ------------------------------------------------------------------
+# 2) FINAL STAGE
+# ------------------------------------------------------------------
 FROM node:${NODE_VERSION}-alpine
-COPY --from=builder / /
 
-# Delete this folder to make the base image backward compatible to be able to build older version images
-RUN rm -rf /tmp/v8-compile-cache*
+# Copy dependencies (binaries, fonts, etc.) from the builder stage
+COPY --from=builder /usr /usr
+COPY --from=builder /lib /lib
+# If you built local code from a fork:
+# COPY --from=builder /app /app
 
-WORKDIR /home/node
+# If you're **not** building from local code, install official n8n now:
+RUN npm install -g n8n
+
+# If you want to run the local/forked build, skip the line above
+# and instead do:
+# WORKDIR /app
+# CMD ["npm", "run", "start"]  # or "node packages/cli/bin/n8n" or "npx n8n", etc.
+
 ENV NODE_ICU_DATA /usr/local/lib/node_modules/full-icu
-EXPOSE 5678/tcp
-#run n8n
+WORKDIR /home/node
+
+# Heroku will map traffic to $PORT,
+# but by default n8n listens on 5678, which is fine:
+EXPOSE 5678
+
+# Make sure we run n8n as the final command
 CMD ["n8n"]
