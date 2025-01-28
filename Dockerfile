@@ -66,6 +66,3 @@ WORKDIR /home/node
 # Heroku will map traffic to $PORT,
 # but by default n8n listens on 5678, which is fine:
 EXPOSE 5678
-
-# Make sure we run n8n as the final command
-CMD ["n8n"]
